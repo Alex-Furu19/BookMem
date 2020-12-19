@@ -35,16 +35,11 @@ public class BookMem extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        setTitle("BookMem");
-
-        //ArrayAdapterオブジェクト生成
         adapter=new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
 
         dbhelper = new DBHelper(this);
         db = dbhelper.getWritableDatabase();
-        //db.delete("booktable", null, null);
 
-        //ListViewオブジェクトの取得
         listView=(ListView)findViewById(R.id.list_view);
 
         Button btn1=(Button)findViewById(R.id.btn1);
@@ -53,8 +48,9 @@ public class BookMem extends AppCompatActivity
 
         et = (EditText)findViewById(R.id.edit_text);
 
-        listViewUpdate();
+        adapterUpdate();
 
+        //登録ボタンが選択されたときのイベント
         btn1.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -64,19 +60,21 @@ public class BookMem extends AppCompatActivity
             }
         });
 
+        //検索ボタンが選択されたときのイベント
         btn2.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 narrowDown_flag = true;
-                listViewUpdate();
+                adapterUpdate();
             }
         });
 
+        //戻るボタンが選択されたときのイベント
         btn3.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 narrowDown_flag = false;
-                listViewUpdate();
+                adapterUpdate();
                 et.setText("");
             }
         });
@@ -86,7 +84,7 @@ public class BookMem extends AppCompatActivity
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 setPosition(position);
-                inclimentBook(1);
+                changeBooksNum(1);
             }
         });
 
@@ -101,10 +99,12 @@ public class BookMem extends AppCompatActivity
             }
         });
 
+        //ListViewの更新
         listView.setAdapter(adapter);
     }
 
-    private void listViewUpdate(){
+    //adapterを更新
+    private void adapterUpdate(){
         adapter.clear();
         Cursor c;
         String item = et.getText().toString();
@@ -123,6 +123,7 @@ public class BookMem extends AppCompatActivity
         }
     }
 
+    //クリックポジションの取得
     private void setPosition(int position) {
         tappedPosition = position;
     }
@@ -130,6 +131,7 @@ public class BookMem extends AppCompatActivity
         return tappedPosition;
     }
 
+    //日付の取得
     private String getTime(){
         Time time = new Time("Asia/Tokyo");
         time.setToNow();
@@ -137,7 +139,8 @@ public class BookMem extends AppCompatActivity
         return date;
     }
 
-    private void inclimentBook(int num){
+    //冊数の増減を更新
+    private void changeBooksNum(int num){
         Cursor c;
         int position = getPosition();
         if(narrowDown_flag){
@@ -155,9 +158,10 @@ public class BookMem extends AppCompatActivity
         val.put("num", booknum);
         val.put("date", date);
         db.update("booktable", val, "item = ?", new String[]{item});
-        listViewUpdate();
+        adapterUpdate();
     }
 
+    //本の重複を確認
     private void checkDuplicate(){
         String item = et.getText().toString();
         Cursor c = db.query("booktable", new String[]{"item", "num", "date"}, "item = ?", new String[]{item}, null, null, null);
@@ -168,6 +172,7 @@ public class BookMem extends AppCompatActivity
         }
     }
 
+    //データベースの更新
     private void addDB(){
         String item = et.getText().toString();
         if(item.length()==0)
@@ -179,14 +184,10 @@ public class BookMem extends AppCompatActivity
         val.put("num", 1);
         val.put("date", date);
         db.insert("booktable", null, val);
-        listViewUpdate();
+        adapterUpdate();
     }
 
-    private void narrowDownDB(){
-
-
-    }
-
+    //ロングクリックで表示されるアラート
     private void alertCheck(String item) {
         String[] alert_menu = {"まとめて追加", "まとめて削除", "項目の削除", "cancel"};
 
@@ -211,6 +212,7 @@ public class BookMem extends AppCompatActivity
         alert.show();
     }
 
+    //本の増加数を取得するアラート
     private void checkInclimentNum(){
         final EditText editText = new EditText(this);
         editText.setHint("数字を入力");
@@ -222,7 +224,6 @@ public class BookMem extends AppCompatActivity
                 .setNeutralButton("cancel", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-
                     }
                 })
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -230,12 +231,13 @@ public class BookMem extends AppCompatActivity
                     public void onClick(DialogInterface dialog, int which) {
                         String num_s = editText.getText().toString();
                         int num = Integer.parseInt(num_s);
-                        inclimentBook(num);
+                        changeBooksNum(num);
                     }
                 })
                 .show();
     }
 
+    //本の削除数を取得するアラート
     private void checkDeclimentNum(){
         final EditText editText = new EditText(this);
         editText.setHint("数字を入力");
@@ -247,7 +249,6 @@ public class BookMem extends AppCompatActivity
                 .setNeutralButton("cancel", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-
                     }
                 })
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -256,12 +257,13 @@ public class BookMem extends AppCompatActivity
                         String num_s = editText.getText().toString();
                         int num = Integer.parseInt(num_s);
                         num *= -1;
-                        inclimentBook(num);
+                        changeBooksNum(num);
                     }
                 })
                 .show();
     }
 
+    //本が重複していた時のアラート
     private void duplicateBook() {
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 
@@ -280,6 +282,7 @@ public class BookMem extends AppCompatActivity
         alertDialog.show();
     }
 
+    //リスト項目を削除する時の確認アラート
     private void deleteCheck() {
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 
@@ -289,9 +292,7 @@ public class BookMem extends AppCompatActivity
 
         alertDialogBuilder.setPositiveButton("Yes",
                 new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        deleteItem();
-                    }
+                    public void onClick(DialogInterface dialog, int which) { deleteItem(); }
                 });
         alertDialogBuilder.setNeutralButton("No",
                 new DialogInterface.OnClickListener() {
@@ -304,6 +305,7 @@ public class BookMem extends AppCompatActivity
         alertDialog.show();
     }
 
+    //リスト項目の削除
     private void deleteItem() {
         Cursor c;
         int position = getPosition();
@@ -316,6 +318,6 @@ public class BookMem extends AppCompatActivity
         c.moveToPosition(position);
         String item = c.getString(0);
         db.delete("booktable", "item = ?", new String[]{item});
-        listViewUpdate();
+        adapterUpdate();
     }
 }
